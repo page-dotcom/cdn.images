@@ -17,7 +17,7 @@ export default function Home() {
     setStatus('Mengirim data...');
     setResultUrl('');
 
-    // Kirim data ke tabel streamlite_posts di Supabase
+    // Kirim data dan minta Supabase mengembalikan data yang baru masuk (.select())
     const { data, error } = await supabase
       .from('streamlite_posts')
       .insert([
@@ -28,18 +28,21 @@ export default function Home() {
           image_right: img3,
           show_play: play
         }
-      ]);
+      ])
+      .select(); // <- Ini penting untuk mengambil ID yang baru terbuat
 
     if (error) {
       setStatus('Gagal: ' + error.message);
-    } else {
+    } else if (data && data.length > 0) {
       setStatus('Data berhasil disimpan!');
       
-      // Membuat URL Vercel OG untuk melihat hasilnya langsung
-      const ogUrl = `/api/og?title=${encodeURIComponent(title)}&img1=${encodeURIComponent(img1)}&img2=${encodeURIComponent(img2)}&img3=${encodeURIComponent(img3)}&play=${play}`;
+      // Ambil ID dari data yang baru saja masuk
+      const newId = data[0].id;
+      
+      // Buat URL pendek yang rapi
+      const ogUrl = `/api/og?id=${newId}`;
       setResultUrl(ogUrl);
       
-      // Kosongkan form setelah sukses (opsional)
       setTitle(''); setImg1(''); setImg2(''); setImg3(''); setPlay(false);
     }
   };
