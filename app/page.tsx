@@ -1,152 +1,222 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from './supabase';
 
 export default function Home() {
+  const [isMounted, setIsMounted] = useState(false);
+
+  // States
   const [title, setTitle] = useState('');
   const [img1, setImg1] = useState('');
   const [img2, setImg2] = useState('');
   const [img3, setImg3] = useState('');
   const [play, setPlay] = useState(false);
-  
-  // State baru untuk fitur Blur dan Lebar
   const [blurSides, setBlurSides] = useState(false);
-  const [blurAmount, setBlurAmount] = useState(10); // Range 1-20
-  const [centerWidth, setCenterWidth] = useState(40); // Range 30-70 persen
+  const [blurAmount, setBlurAmount] = useState(10);
+  const [centerWidth, setCenterWidth] = useState(40);
 
+  // UI States
   const [status, setStatus] = useState('');
   const [resultUrl, setResultUrl] = useState('');
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedHtml, setCopiedHtml] = useState(false);
+
+  // 1. FITUR ANTI-REFRESH (Load data dari localStorage saat pertama buka)
+  useEffect(() => {
+    setIsMounted(true);
+    const savedData = localStorage.getItem('streamlite_draft');
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData);
+        setTitle(parsed.title || '');
+        setImg1(parsed.img1 || '');
+        setImg2(parsed.img2 || '');
+        setImg3(parsed.img3 || '');
+        setPlay(parsed.play || false);
+        setBlurSides(parsed.blurSides || false);
+        if (parsed.blurAmount) setBlurAmount(parsed.blurAmount);
+        if (parsed.centerWidth) setCenterWidth(parsed.centerWidth);
+      } catch (e) {
+        console.error('Error parsing draft');
+      }
+    }
+  }, []);
+
+  // 2. FITUR ANTI-REFRESH (Simpan otomatis setiap ada perubahan ketikan)
+  useEffect(() => {
+    if (isMounted) {
+      const draft = { title, img1, img2, img3, play, blurSides, blurAmount, centerWidth };
+      localStorage.setItem('streamlite_draft', JSON.stringify(draft));
+    }
+  }, [title, img1, img2, img3, play, blurSides, blurAmount, centerWidth, isMounted]);
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-    setStatus('Mengirim data...');
+    setStatus('MENGIRIM DATA...');
     setResultUrl('');
 
     const { data, error } = await supabase
       .from('streamlite_posts')
       .insert([
-        {
-          title: title,
-          image_left: img1,
-          image_center: img2,
-          image_right: img3,
-          show_play: play,
-          // Masukkan settingan baru ke database
-          blur_sides: blurSides,
-          blur_amount: blurAmount,
-          center_width: centerWidth
-        }
+        { title, image_left: img1, image_center: img2, image_right: img3, show_play: play, blur_sides: blurSides, blur_amount: blurAmount, center_width: centerWidth }
       ])
       .select();
 
     if (error) {
-      setStatus('Gagal: ' + error.message);
+      setStatus('GAGAL: ' + error.message);
     } else if (data && data.length > 0) {
-      setStatus('Data berhasil disimpan! Tunggu sebentar...');
+      setStatus('DATA BERHASIL DISIMPAN');
       const newId = data[0].id;
-      // URL tetap bersih dan pendek
-      const ogUrl = `/api/og?id=${newId}`;
+      // Gunakan URL absolut agar bisa di-copy dan dipakai di web lain
+      const baseUrl = window.location.origin;
+      const ogUrl = `${baseUrl}/api/og?id=${newId}`;
       setResultUrl(ogUrl);
       
-      // Reset form (opsional)
-      // setTitle(''); setImg1(''); setImg2(''); setImg3(''); setPlay(false); setBlurSides(false); setCenterWidth(40);
+      // Hapus draft setelah berhasil (opsional, saya matikan agar kamu bisa edit ulang jika mau)
+      // localStorage.removeItem('streamlite_draft');
     }
   };
 
-  // Style untuk label input
-  const labelStyle = { display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' as const };
-  // Style untuk input text
-  const inputStyle = { width: '100%', padding: '16px', backgroundColor: '#f0f0f0', border: 'none', borderRadius: 0, fontSize: '16px', outline: 'none' };
-  // Style untuk container checkbox/slider
-  const optionContainerStyle = { padding: '16px', backgroundColor: '#f0f0f0', marginBottom: '20px' };
+  const copyToClipboard = (text: string, type: 'link' | 'html') => {
+    navigator.clipboard.writeText(text);
+    if (type === 'link') {
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    } else {
+      setCopiedHtml(true);
+      setTimeout(() => setCopiedHtml(false), 2000);
+    }
+  };
+
+  // Mencegah error tampilan Next.js saat load localStorage
+  if (!isMounted) return <div style={{ minHeight: '100vh', backgroundColor: '#fcfcfc' }}></div>;
+
+  // Kode HTML untuk Blogger
+  const htmlSnippet = `<h2>${title}</h2>\n<img src="${resultUrl}" style="width:100%; display:none;" alt="${title}" />`;
+
+  // Styles
+  const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' as const, color: '#333' };
+  const inputStyle = { width: '100%', padding: '18px', backgroundColor: '#ececec', border: 'none', borderRadius: 0, fontSize: '15px', outline: 'none', color: '#111' };
+  const optionContainerStyle = { padding: '20px', backgroundColor: '#ececec', marginBottom: '20px' };
+  const btnStyle = { padding: '15px 25px', border: 'none', borderRadius: 0, fontSize: '14px', fontWeight: 700, cursor: 'pointer', textTransform: 'uppercase' as const, letterSpacing: '1px' };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', padding: '40px', justifyContent: 'center', fontFamily: 'sans-serif' }}>
-      <div style={{ width: '100%', maxWidth: '600px' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', padding: '0', justifyContent: 'center', backgroundColor: '#fcfcfc' }}>
+      <div style={{ width: '100%', maxWidth: '700px', backgroundColor: '#fff', padding: '40px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
         
-        <h1 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '30px' }}>
-          Add New Post + Settings
-        </h1>
+        {/* HEADER & LIST BUTTON */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px', borderBottom: '2px solid #111', paddingBottom: '20px' }}>
+          <h1 style={{ fontSize: '22px', fontWeight: 800, margin: 0, letterSpacing: '2px', textTransform: 'uppercase' }}>
+            New Post
+          </h1>
+          <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} title="View Post List">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter">
+              <line x1="8" y1="6" x2="21" y2="6"></line>
+              <line x1="8" y1="12" x2="21" y2="12"></line>
+              <line x1="8" y1="18" x2="21" y2="18"></line>
+              <line x1="3" y1="6" x2="3.01" y2="6"></line>
+              <line x1="3" y1="12" x2="3.01" y2="12"></line>
+              <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+          </button>
+        </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
           
           <div>
-            <label style={labelStyle}>Title</label>
-            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Post Title" style={inputStyle} required />
+            <label style={labelStyle}>Movie / Post Title</label>
+            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Enter title here..." style={inputStyle} required />
           </div>
 
           <div>
-            <label style={labelStyle}>Image URL 1 (Left)</label>
+            <label style={labelStyle}>Image 1 (Left)</label>
             <input type="url" value={img1} onChange={(e) => setImg1(e.target.value)} placeholder="https://..." style={inputStyle} required />
           </div>
 
           <div>
-            <label style={labelStyle}>Image URL 2 (Center - Main)</label>
+            <label style={labelStyle}>Image 2 (Center Main)</label>
             <input type="url" value={img2} onChange={(e) => setImg2(e.target.value)} placeholder="https://..." style={inputStyle} required />
           </div>
 
           <div>
-            <label style={labelStyle}>Image URL 3 (Right)</label>
+            <label style={labelStyle}>Image 3 (Right)</label>
             <input type="url" value={img3} onChange={(e) => setImg3(e.target.value)} placeholder="https://..." style={inputStyle} required />
           </div>
 
-          {/* --- BAGIAN SETTING BARU --- */}
-          <div style={optionContainerStyle}>
-             <label style={labelStyle}>Center Image Width: {centerWidth}%</label>
-             <input 
-                type="range" min="30" max="70" value={centerWidth} 
-                onChange={(e) => setCenterWidth(parseInt(e.target.value))}
-                style={{ width: '100%', cursor: 'pointer' }}
-             />
-             <p style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>Geser untuk melebarkan gambar tengah ke samping.</p>
-          </div>
-
-          <div style={optionContainerStyle}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: blurSides ? '15px' : '0' }}>
-                <input type="checkbox" checked={blurSides} onChange={(e) => setBlurSides(e.target.checked)} style={{ width: '20px', height: '20px', cursor: 'pointer' }} id="blurCheck"/>
-                <label htmlFor="blurCheck" style={{ fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>Blur Side Images (Left & Right)</label>
-            </div>
+          {/* ADVANCED SETTINGS */}
+          <div style={{ marginTop: '10px' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '15px', textTransform: 'uppercase', letterSpacing: '1px' }}>Layout Settings</h3>
             
-            {/* Slider Blur Adjustment hanya muncul jika checkbox dicentang */}
-            {blurSides && (
-                <div>
-                 <label style={{...labelStyle, fontSize: '12px', marginBottom: '5px'}}>Blur Intensity: {blurAmount}px</label>
-                 <input 
-                    type="range" min="1" max="30" value={blurAmount} 
-                    onChange={(e) => setBlurAmount(parseInt(e.target.value))}
-                    style={{ width: '100%', cursor: 'pointer' }}
-                 />
-                </div>
-            )}
+            <div style={optionContainerStyle}>
+               <label style={labelStyle}>Center Width: {centerWidth}%</label>
+               <input type="range" min="30" max="70" value={centerWidth} onChange={(e) => setCenterWidth(parseInt(e.target.value))} style={{ width: '100%', cursor: 'pointer' }} />
+            </div>
+
+            <div style={optionContainerStyle}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: blurSides ? '20px' : '0' }}>
+                  <input type="checkbox" checked={blurSides} onChange={(e) => setBlurSides(e.target.checked)} style={{ width: '22px', height: '22px', cursor: 'pointer' }} id="blurCheck"/>
+                  <label htmlFor="blurCheck" style={{ fontSize: '14px', fontWeight: 700, cursor: 'pointer', margin: 0 }}>Apply Blur to Left & Right Images</label>
+              </div>
+              {blurSides && (
+                  <div>
+                   <label style={{...labelStyle, color: '#666'}}>Blur Intensity: {blurAmount}px</label>
+                   <input type="range" min="1" max="30" value={blurAmount} onChange={(e) => setBlurAmount(parseInt(e.target.value))} style={{ width: '100%', cursor: 'pointer' }} />
+                  </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', padding: '20px', backgroundColor: '#ececec' }}>
+              <input type="checkbox" checked={play} onChange={(e) => setPlay(e.target.checked)} style={{ width: '22px', height: '22px', cursor: 'pointer' }} id="playCheck"/>
+              <label htmlFor="playCheck" style={{ fontSize: '14px', fontWeight: 700, cursor: 'pointer', margin: 0 }}>Add Red Play Button</label>
+            </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px', padding: '16px', backgroundColor: '#f0f0f0' }}>
-            <input type="checkbox" checked={play} onChange={(e) => setPlay(e.target.checked)} style={{ width: '20px', height: '20px', cursor: 'pointer' }} id="playCheck"/>
-            <label htmlFor="playCheck" style={{ fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>Include Red Play Button (Center)</label>
-          </div>
-          {/* --- END BAGIAN SETTING BARU --- */}
-
-
-          <button type="submit" style={{ marginTop: '10px', padding: '20px', backgroundColor: '#111', color: '#fff', border: 'none', fontSize: '16px', fontWeight: 600, cursor: 'pointer' }}>
-            SUBMIT DATA & GENERATE
+          <button type="submit" style={{ ...btnStyle, marginTop: '20px', backgroundColor: '#111', color: '#fff', width: '100%', padding: '22px' }}>
+            GENERATE IMAGE
           </button>
 
+          {/* STATUS TEXT (Menggantikan Alert) */}
           {status && (
-            <div style={{ marginTop: '20px', padding: '15px', backgroundColor: resultUrl ? '#d4edda' : '#f8d7da', color: resultUrl ? '#155724' : '#721c24', fontSize: '14px', fontWeight: 500 }}>
+            <div style={{ padding: '15px', backgroundColor: resultUrl ? '#e8f5e9' : '#111', color: resultUrl ? '#1b5e20' : '#fff', fontSize: '13px', fontWeight: 700, textAlign: 'center', letterSpacing: '1px' }}>
               {status}
             </div>
           )}
-
-          {resultUrl && (
-            <div style={{ marginTop: '10px' }}>
-              <a href={resultUrl} target="_blank" rel="noreferrer" style={{ display: 'block', textAlign: 'center', padding: '15px', backgroundColor: '#111', color: '#fff', textDecoration: 'none', fontSize: '14px', fontWeight: 700 }}>
-                KLIK UNTUK MELIHAT HASIL GAMBAR
-              </a>
-            </div>
-          )}
-
         </form>
+
+        {/* AREA HASIL - Muncul hanya jika sukses */}
+        {resultUrl && (
+          <div style={{ marginTop: '40px', paddingTop: '40px', borderTop: '2px solid #ececec' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '20px', textTransform: 'uppercase' }}>Result & Export</h2>
+            
+            {/* Action Buttons for URL */}
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '30px' }}>
+              <a href={resultUrl} target="_blank" rel="noreferrer" style={{ ...btnStyle, backgroundColor: '#111', color: '#fff', textDecoration: 'none', textAlign: 'center', flex: 1 }}>
+                LIHAT GAMBAR
+              </a>
+              <button onClick={() => copyToClipboard(resultUrl, 'link')} style={{ ...btnStyle, backgroundColor: '#ececec', color: '#111', flex: 1 }}>
+                {copiedLink ? 'COPIED!' : 'COPY IMAGE URL'}
+              </button>
+            </div>
+
+            {/* Kode HTML untuk Blogger */}
+            <div style={{ backgroundColor: '#111', padding: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                <span style={{ color: '#fff', fontSize: '12px', fontWeight: 700, letterSpacing: '1px' }}>HTML CODE (BLOGGER / WEB)</span>
+                <button onClick={() => copyToClipboard(htmlSnippet, 'html')} style={{ ...btnStyle, backgroundColor: '#fff', color: '#111', padding: '8px 15px', fontSize: '12px' }}>
+                  {copiedHtml ? 'COPIED!' : 'COPY HTML'}
+                </button>
+              </div>
+              <textarea 
+                readOnly 
+                value={htmlSnippet}
+                style={{ width: '100%', height: '100px', backgroundColor: '#222', color: '#00ffcc', border: 'none', padding: '15px', fontSize: '13px', fontFamily: 'monospace', resize: 'none', outline: 'none' }}
+              />
+            </div>
+
+          </div>
+        )}
+
       </div>
     </div>
   );
