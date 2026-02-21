@@ -107,7 +107,8 @@ export default function Home() {
 
   
   return (
-      <div style={{ display: 'flex', minHeight: '100vh', padding: '50px 20px', justifyContent: 'center', backgroundColor: '#fcfcfc', boxSizing: 'border-box' }}>
+     <div style={{ display: 'flex', minHeight: '100vh', padding: '50px 20px', justifyContent: 'center', alignItems: 'flex-start', backgroundColor: '#fcfcfc', boxSizing: 'border-box' }}>
+      
       <div style={{ width: '100%', maxWidth: '700px', backgroundColor: '#fff', padding: '40px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
         
         {/* HEADER & LIST BUTTON */}
