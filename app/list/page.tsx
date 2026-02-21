@@ -91,34 +91,48 @@ export default function ListPage() {
           </div>
         )}
 
-        {/* TABLE AREA (Scrollable) */}
+        {/* TABLE AREA (Scrollable & Fixed Layout) */}
         <div style={{ width: '100%', overflowX: 'auto', marginBottom: '30px' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '700px', tableLayout: 'fixed' }}>
             <thead>
               <tr>
-                <th style={thStyle}>Image</th>
+                <th style={{ ...thStyle, width: '100px' }}>Image</th>
+                <th style={{ ...thStyle, width: '120px' }}>Date</th>
                 <th style={thStyle}>Title</th>
-                <th style={thStyle}>Actions</th>
+                <th style={{ ...thStyle, width: '180px' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={3} style={{ ...tdStyle, textAlign: 'center', padding: '40px', fontWeight: 700 }}>LOADING DATA...</td>
+                  <td colSpan={4} style={{ ...tdStyle, textAlign: 'center', padding: '40px', fontWeight: 700 }}>LOADING DATA...</td>
                 </tr>
               ) : posts.length === 0 ? (
                 <tr>
-                  <td colSpan={3} style={{ ...tdStyle, textAlign: 'center', padding: '40px', fontWeight: 700 }}>TIDAK ADA DATA</td>
+                  <td colSpan={4} style={{ ...tdStyle, textAlign: 'center', padding: '40px', fontWeight: 700 }}>TIDAK ADA DATA</td>
                 </tr>
               ) : (
                 posts.map((post) => (
                   <tr key={post.id} style={{ transition: 'background-color 0.2s' }}>
+                    
+                    {/* Kolom Gambar */}
                     <td style={tdStyle}>
-                      <img src={post.image_center} alt="Preview" style={{ width: '80px', height: '45px', objectFit: 'cover', backgroundColor: '#eee' }} />
+                      <img src={post.image_center} alt="Preview" style={{ width: '80px', height: '45px', objectFit: 'cover', backgroundColor: '#eee', display: 'block' }} />
                     </td>
-                    <td style={{ ...tdStyle, whiteSpace: 'nowrap', fontWeight: 600, maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {post.title}
+
+                    {/* Kolom Tanggal (Baru) */}
+                    <td style={{ ...tdStyle, whiteSpace: 'nowrap', color: '#666', fontSize: '12px', fontWeight: 700 }}>
+                      {new Date(post.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </td>
+
+                    {/* Kolom Judul (Dengan efek ellipsis ...) */}
+                    <td style={tdStyle}>
+                      <div style={{ width: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 800 }}>
+                        {post.title}
+                      </div>
+                    </td>
+
+                    {/* Kolom Aksi */}
                     <td style={{ ...tdStyle, whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button onClick={() => handleCopy(post.id)} style={{ ...btnStyle, backgroundColor: '#f5f5f5', color: '#111' }}>
@@ -129,6 +143,7 @@ export default function ListPage() {
                         </button>
                       </div>
                     </td>
+
                   </tr>
                 ))
               )}
