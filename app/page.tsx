@@ -96,11 +96,16 @@ export default function Home() {
   const htmlSnippet = `<h2>${title}</h2>\n<img src="${resultUrl}" style="width:100%; display:none;" alt="${title}" />`;
 
   // Styles
-  const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' as const, color: '#333' };
-  const inputStyle = { width: '100%', padding: '18px', backgroundColor: '#ececec', border: 'none', borderRadius: 0, fontSize: '15px', outline: 'none', color: '#111' };
-  const optionContainerStyle = { padding: '20px', backgroundColor: '#ececec', marginBottom: '20px' };
-  const btnStyle = { padding: '15px 25px', border: 'none', borderRadius: 0, fontSize: '14px', fontWeight: 700, cursor: 'pointer', textTransform: 'uppercase' as const, letterSpacing: '1px' };
+  // Styles yang sudah dirapikan (pas untuk Mobile & Desktop)
+  const labelStyle = { display: 'block', fontSize: '11px', fontWeight: 800, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1.5px', color: '#555' };
+  
+  const inputStyle = { width: '100%', padding: '16px', backgroundColor: '#f5f5f5', border: 'none', borderRadius: 0, fontSize: '14px', outline: 'none', color: '#111', boxSizing: 'border-box' as const };
+  
+  const optionContainerStyle = { padding: '20px', backgroundColor: '#f5f5f5', marginBottom: '5px', boxSizing: 'border-box' as const };
+  
+  const btnStyle = { padding: '16px 20px', border: 'none', borderRadius: 0, fontSize: '13px', fontWeight: 800, cursor: 'pointer', textTransform: 'uppercase' as const, letterSpacing: '1px', boxSizing: 'border-box' as const };
 
+  
   return (
     <div style={{ display: 'flex', minHeight: '100vh', padding: '0', justifyContent: 'center', backgroundColor: '#fcfcfc' }}>
       <div style={{ width: '100%', maxWidth: '700px', backgroundColor: '#fff', padding: '40px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
@@ -186,37 +191,38 @@ export default function Home() {
 
         {/* AREA HASIL - Muncul hanya jika sukses */}
         {resultUrl && (
-          <div style={{ marginTop: '40px', paddingTop: '40px', borderTop: '2px solid #ececec' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 800, marginBottom: '20px', textTransform: 'uppercase' }}>Result & Export</h2>
+          <div style={{ marginTop: '50px', paddingTop: '40px', borderTop: '2px solid #f5f5f5' }}>
+            <h2 style={{ fontSize: '15px', fontWeight: 800, marginBottom: '20px', textTransform: 'uppercase', letterSpacing: '1px' }}>Result & Export</h2>
             
             {/* Action Buttons for URL */}
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '30px' }}>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '25px' }}>
               <a href={resultUrl} target="_blank" rel="noreferrer" style={{ ...btnStyle, backgroundColor: '#111', color: '#fff', textDecoration: 'none', textAlign: 'center', flex: 1 }}>
                 LIHAT GAMBAR
               </a>
-              <button onClick={() => copyToClipboard(resultUrl, 'link')} style={{ ...btnStyle, backgroundColor: '#ececec', color: '#111', flex: 1 }}>
+              <button onClick={() => copyToClipboard(resultUrl, 'link')} style={{ ...btnStyle, backgroundColor: '#f5f5f5', color: '#111', flex: 1 }}>
                 {copiedLink ? 'COPIED!' : 'COPY IMAGE URL'}
               </button>
             </div>
 
             {/* Kode HTML untuk Blogger */}
-            <div style={{ backgroundColor: '#111', padding: '20px' }}>
+            <div style={{ backgroundColor: '#111', padding: '20px', boxSizing: 'border-box', width: '100%' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                <span style={{ color: '#fff', fontSize: '12px', fontWeight: 700, letterSpacing: '1px' }}>HTML CODE (BLOGGER / WEB)</span>
-                <button onClick={() => copyToClipboard(htmlSnippet, 'html')} style={{ ...btnStyle, backgroundColor: '#fff', color: '#111', padding: '8px 15px', fontSize: '12px' }}>
+                <span style={{ color: '#fff', fontSize: '11px', fontWeight: 800, letterSpacing: '1.5px' }}>HTML CODE (BLOGGER)</span>
+                <button onClick={() => copyToClipboard(htmlSnippet, 'html')} style={{ ...btnStyle, backgroundColor: '#fff', color: '#111', padding: '8px 12px', fontSize: '11px' }}>
                   {copiedHtml ? 'COPIED!' : 'COPY HTML'}
                 </button>
               </div>
+              
+              {/* Textarea dibedakan warnanya sedikit agar kontras dengan background hitam */}
               <textarea 
                 readOnly 
                 value={htmlSnippet}
-                style={{ width: '100%', height: '100px', backgroundColor: '#222', color: '#00ffcc', border: 'none', padding: '15px', fontSize: '13px', fontFamily: 'monospace', resize: 'none', outline: 'none' }}
+                style={{ width: '100%', height: '100px', backgroundColor: '#1a1a1a', color: '#00ffcc', border: 'none', padding: '15px', fontSize: '13px', fontFamily: 'monospace', resize: 'none', outline: 'none', boxSizing: 'border-box', margin: 0 }}
               />
             </div>
 
           </div>
         )}
-
       </div>
     </div>
   );
